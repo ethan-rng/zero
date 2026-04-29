@@ -1,0 +1,81 @@
+version: 2
+
+project_name: zero
+
+before:
+  hooks:
+    - make build-web
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - format: tar.gz
+    # this name template makes the OS and Arch compatible with the results of uname.
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+    # use zip for windows archives
+    format_overrides:
+    - goos: windows
+      format: zip
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+# Linux distributions (Debian/Ubuntu & RHEL/CentOS)
+nfpms:
+  - id: zero
+    vendor: ethan-rng
+    homepage: https://github.com/ethan-rng/zero
+    maintainer: ethan-rng <ethan-rng@users.noreply.github.com>
+    description: Zero application
+    license: MIT
+    formats:
+      - deb
+      - rpm
+    bindir: /usr/bin
+
+# Homebrew for macOS and Linux
+brews:
+  - repository:
+      owner: ethan-rng
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    commit_author:
+      name: ethan-rng
+      email: ethan-rng@users.noreply.github.com
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    homepage: https://github.com/ethan-rng/zero
+    description: Zero application
+
+# Chocolatey for Windows
+chocos:
+  - name: zero
+    title: Zero
+    authors: ethan-rng
+    project_url: https://github.com/ethan-rng/zero
+    tags: cli tool
+    summary: Zero application
+    description: Zero application
